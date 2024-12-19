@@ -6,7 +6,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"oncall/config"
@@ -15,8 +14,9 @@ import (
 )
 
 type OncallService struct {
-	client httpclient.HTTPClient
-	config *config.Config
+	client   httpclient.HTTPClient
+	config   *config.Config
+	strategy FetchDataStrategy
 }
 
 func NewOncallService(client httpclient.HTTPClient, config *config.Config) *OncallService {
@@ -26,45 +26,24 @@ func NewOncallService(client httpclient.HTTPClient, config *config.Config) *Onca
 	}
 }
 
+func (s *OncallService) SetFetchDataStrategy(kind string) {
+	switch kind {
+	case "day":
+		s.strategy = &DayFetchDataStrategy{s.client}
+	case "week":
+		s.strategy = &WeekFetchDataStrategy{s.client}
+	default:
+		s.strategy = &DayFetchDataStrategy{s.client} // 或者设置一个默认策略
+	}
+}
+
 func (s *OncallService) FetchAllData(kind string) ([]string, error) {
 	topics, err := s.getTopics(kind)
 	if err != nil {
 		return nil, err
 	}
-	resp := make([]string, len(topics))
-
-	// 现在拿到所有的 topic 了，根据 day 还是 week，进行不同的大模型处理
-	var wg sync.WaitGroup
-	wg.Add(len(topics))
-	var errMsg error
-	for idx, topic := range topics {
-		go func(idx int, topic model.Topic) {
-			if err := func() error {
-				defer wg.Done()
-				str := fmt.Sprintf("%s, %s/%d\n", topic.Title, s.config.TopicListURL, topic.ID)
-				if kind == "day" {
-					// 还需要额外获取详细信息
-					topicDetail, err := s.getTopicDetails(kind, topic.ID)
-					if err != nil {
-						return err
-					}
-					str += topicDetail
-				}
-				resp[idx] = str
-				return nil
-			}(); err != nil {
-				errMsg = fmt.Errorf("%v; %w", errMsg, err)
-			}
-
-		}(idx, topic)
-	}
-	wg.Wait()
-
-	if errMsg != nil {
-		return nil, errMsg
-	}
-
-	return resp, nil
+	s.SetFetchDataStrategy(kind)
+	return s.strategy.FetchData(topics, s.config)
 }
 
 func (s *OncallService) getTopics(kind string) ([]model.Topic, error) {
@@ -109,7 +88,7 @@ func (s *OncallService) getTopicDetails(kind string, topicID int) (string, error
 
 func (s *OncallService) FetchPageData(page int) (*model.Response, error) {
 	url := os.Getenv("PAGE_DATA_BASE_URL") + strconv.Itoa(page)
-	respBody, err := doRequest(s.client, "GET", url, nil, *s.config)
+	respBody, err := doRequest(s.client, "GET", url, nil, s.config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch page data: %w", err)
 	}
@@ -123,7 +102,7 @@ func (s *OncallService) FetchPageData(page int) (*model.Response, error) {
 }
 
 func (s *OncallService) FetchTopicDetail(url string) (*model.PostResponse, error) {
-	respBody, err := doRequest(s.client, "GET", url, nil, *s.config)
+	respBody, err := doRequest(s.client, "GET", url, nil, s.config)
 	if err != nil {
 		return nil, err
 	}

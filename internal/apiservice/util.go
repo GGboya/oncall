@@ -18,7 +18,7 @@ import (
 const maxBackoff = 16
 
 // doRequest 发送通用 HTTP 请求
-func doRequest(client httpclient.HTTPClient, method, url string, body interface{}, config config.Config) ([]byte, error) {
+func doRequest(client httpclient.HTTPClient, method, url string, body interface{}, config *config.Config) ([]byte, error) {
 	var requestBody io.Reader
 	if body != nil {
 		jsonBody, err := json.Marshal(body)
@@ -67,7 +67,7 @@ func doRequest(client httpclient.HTTPClient, method, url string, body interface{
 	return io.ReadAll(resp.Body)
 }
 
-func SetRequestHeaders(req *http.Request, config config.Config) {
+func SetRequestHeaders(req *http.Request, config *config.Config) {
 	// 设置 API Key 和用户名的 Header
 	req.Header.Add("Api-Key", config.AccessKey)
 	req.Header.Add("Api-Username", config.UserName)

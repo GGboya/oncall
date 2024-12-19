@@ -35,7 +35,7 @@ func (s *DeepSeekService) SendDeepSeekRequest(data []string, action string) (*mo
 		"stream": false,
 	}
 
-	respBody, err := doRequest(s.client, "POST", url, requestBody, *s.config)
+	respBody, err := doRequest(s.client, "POST", url, requestBody, s.config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request to DeepSeek: %v", err)
 	}

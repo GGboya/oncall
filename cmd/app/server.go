@@ -1,57 +1,47 @@
 package app
 
 import (
-	"oncall/config"
-	"oncall/internal/apiservice"
+	"fmt"
 	"oncall/internal/cronjob"
-	"oncall/internal/httpclient"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
 // NewCommand creates a *cobra.Command object with default parameters
-func NewCommand() *cobra.Command {
-	cmd := &cobra.Command{
+func NewCommand(deps *AppDependencies) *cobra.Command {
+	rootCmd := &cobra.Command{
 		Use:   "oncall",
 		Short: "Launch an oncall server",
 		Long:  "Launch an oncall server",
-	}
-
-	// 添加 day 子命令
-	dayCmd := &cobra.Command{
-		Use:   "day",
-		Short: "Execute day logic",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, err := config.NewConfig()
-			if err != nil {
-				return err
-			}
-			return RunDay(cfg)
+			return Run(deps)
 		},
 	}
-	cmd.RunE = func(cmd *cobra.Command, args []string) error {
-		cfg, err := config.NewConfig()
-		if err != nil {
-			return err
-		}
-		return Run(cfg)
+
+	subCommands := map[string]Command{
+		"day": &DayCommand{},
 	}
-	cmd.AddCommand(dayCmd)
-	return cmd
+
+	for name, cmdLogic := range subCommands {
+		subCmd := &cobra.Command{
+			Use:   name,
+			Short: fmt.Sprintf("Execute %s logic", name),
+			RunE: func(cmd *cobra.Command, args []string) error {
+				return cmdLogic.Execute(deps)
+			},
+		}
+		rootCmd.AddCommand(subCmd)
+	}
+	return rootCmd
 }
 
-func Run(cfg *config.Config) error {
-	httpClient := httpclient.NewHTTPClient()
-	apiService := apiservice.NewAPIService(httpClient, cfg)
+func Run(deps *AppDependencies) error {
 	cronScheduler := cronjob.NewCronScheduler()
+	taskFactory := &DefaultTaskFactory{}
 
 	// 动态注册任务
-	tasks := []cronjob.Task{
-		cronjob.NewWeeklyTask(apiService),
-		cronjob.NewDailyTask(apiService),
-	}
-
+	tasks := taskFactory.CreateTasks(deps.APIService)
 	for _, task := range tasks {
 		if err := cronScheduler.RegisterTask(task); err != nil {
 			logrus.WithError(err).Errorf("Failed to register task: %s", task.Name())
@@ -61,12 +51,4 @@ func Run(cfg *config.Config) error {
 
 	// 启动调度器
 	return cronScheduler.Start()
-}
-
-func RunDay(cfg *config.Config) error {
-	httpClient := httpclient.NewHTTPClient()
-	apiService := apiservice.NewAPIService(httpClient, cfg)
-
-	err := cronjob.ExecuteTask(apiService, "day", config.Fenxi)
-	return err
 }
