@@ -15,7 +15,7 @@ import (
 	"oncall/internal/httpclient"
 )
 
-const maxBackoff = 16
+const maxBackoff = 32
 
 // doRequest 发送通用 HTTP 请求
 func doRequest(client httpclient.HTTPClient, method, url string, body interface{}, config *config.Config) ([]byte, error) {

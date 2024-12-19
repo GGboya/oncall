@@ -1,9 +1,10 @@
 package app
 
 import (
-	"fmt"
 	"oncall/config"
 	"oncall/internal/cronjob"
+
+	"github.com/sirupsen/logrus"
 )
 
 type Command interface {
@@ -13,6 +14,6 @@ type Command interface {
 type DayCommand struct{}
 
 func (c *DayCommand) Execute(deps *AppDependencies) error {
-	fmt.Println("Executing day command...")
+	logrus.Info("Executing day command...")
 	return cronjob.ExecuteTask(deps.APIService, "day", config.Fenxi)
 }

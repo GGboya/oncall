@@ -18,26 +18,29 @@ func ensureDir(dirName string) error {
 }
 
 func ExecuteTask(apiService *apiservice.APIService, kind string, taskName string) error {
+	logrus.Info("Executing task")
 	data, err := apiService.Oncall.FetchAllData(kind)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to fetch data")
 		return err
 	}
 
+	logrus.Info("Fetched data, preparing to send DeepSeekRequest")
 	response, err := apiService.DeepSeek.SendDeepSeekRequest(data, taskName)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to send request")
 		return err
 	}
 
+	logrus.Infof("Response: %s\n", response.Choices[0].Message.Content)
 	// 写入文件前检查目录
-	outputDir := fmt.Sprintf("../output/%s", kind)
+	outputDir := fmt.Sprintf("%s/output/%s", os.Getenv("OUTPUT_DIR"), kind)
 	if err := ensureDir(outputDir); err != nil {
 		logrus.WithError(err).Errorf("Failed to create directory %s", outputDir)
 		return err
 	}
 
-	outputFile := fmt.Sprintf("../output/%s/output_%s.txt", kind, time.Now().Format("20060102"))
+	outputFile := fmt.Sprintf("%s/output/%s/output_%s_%d.txt", os.Getenv("OUTPUT_DIR"), kind, time.Now().Format("20060102"), time.Now().UnixNano()/int64(time.Millisecond))
 	if err := WriteToFile(outputFile, response.Choices[0].Message.Content); err != nil {
 		logrus.WithError(err).Error("Failed to write to file")
 		return err

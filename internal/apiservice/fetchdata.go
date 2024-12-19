@@ -28,7 +28,6 @@ func (d *DayFetchDataStrategy) FetchData(topics []model.Topic, config *config.Co
 	// day 相关逻辑
 	// 每天的数据，还需要额外把每个帖子中的讨论也进行整合，放入到大模型中处理
 	resp := make([]string, len(topics))
-	fmt.Println("day fetch data", topics)
 
 	// 现在拿到所有的 topic 了，根据 day 还是 week，进行不同的大模型处理
 	var wg sync.WaitGroup
