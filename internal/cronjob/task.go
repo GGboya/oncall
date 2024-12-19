@@ -1,13 +1,15 @@
 package cronjob
 
 import (
+	"oncall/config"
 	"oncall/internal/apiservice"
 )
 
 type Task interface {
-	Name() string     // 任务名称，便于调试和日志
+	Name() string     // 任务名称，如 Fenlei、Fenxi 等
 	Schedule() string // Cron 表达式，定义任务的调度规则
 	Execute() error   // 任务执行逻辑
+	Kind() string     // 用于区分任务类型，例如：week、day等
 }
 
 type WeeklyTask struct {
@@ -19,7 +21,7 @@ func NewWeeklyTask(apiService *apiservice.APIService) *WeeklyTask {
 }
 
 func (t *WeeklyTask) Name() string {
-	return "week"
+	return config.Fenlei
 }
 
 func (t *WeeklyTask) Schedule() string {
@@ -27,7 +29,11 @@ func (t *WeeklyTask) Schedule() string {
 }
 
 func (t *WeeklyTask) Execute() error {
-	return executeTask(t.apiService, t.Name())
+	return ExecuteTask(t.apiService, t.Kind(), t.Name())
+}
+
+func (t *WeeklyTask) Kind() string {
+	return "week"
 }
 
 type DailyTask struct {
@@ -39,7 +45,7 @@ func NewDailyTask(apiService *apiservice.APIService) *DailyTask {
 }
 
 func (t *DailyTask) Name() string {
-	return "day"
+	return config.Fenxi
 }
 
 func (t *DailyTask) Schedule() string {
@@ -47,5 +53,9 @@ func (t *DailyTask) Schedule() string {
 }
 
 func (t *DailyTask) Execute() error {
-	return executeTask(t.apiService, t.Name())
+	return ExecuteTask(t.apiService, t.Kind(), t.Name())
+}
+
+func (t *DailyTask) Kind() string {
+	return "day"
 }

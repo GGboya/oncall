@@ -13,16 +13,31 @@ import (
 // NewCommand creates a *cobra.Command object with default parameters
 func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Short: "Launch a oncall server",
-		Long:  "Launch a oncall server",
+		Use:   "oncall",
+		Short: "Launch an oncall server",
+		Long:  "Launch an oncall server",
+	}
+
+	// 添加 day 子命令
+	dayCmd := &cobra.Command{
+		Use:   "day",
+		Short: "Execute day logic",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := config.NewConfig()
 			if err != nil {
 				return err
 			}
-			return Run(cfg)
+			return RunDay(cfg)
 		},
 	}
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		cfg, err := config.NewConfig()
+		if err != nil {
+			return err
+		}
+		return Run(cfg)
+	}
+	cmd.AddCommand(dayCmd)
 	return cmd
 }
 
@@ -46,4 +61,12 @@ func Run(cfg *config.Config) error {
 
 	// 启动调度器
 	return cronScheduler.Start()
+}
+
+func RunDay(cfg *config.Config) error {
+	httpClient := httpclient.NewHTTPClient()
+	apiService := apiservice.NewAPIService(httpClient, cfg)
+
+	err := cronjob.ExecuteTask(apiService, "day", config.Fenxi)
+	return err
 }
