@@ -3,6 +3,8 @@ package apiservice
 import (
 	"oncall/config"
 	"oncall/internal/httpclient"
+
+	"github.com/elastic/go-elasticsearch/v8"
 )
 
 type APIService struct {
@@ -10,9 +12,9 @@ type APIService struct {
 	Oncall   *OncallService
 }
 
-func NewAPIService(client httpclient.HTTPClient, config *config.Config) *APIService {
+func NewAPIService(client httpclient.HTTPClient, config *config.Config, es *elasticsearch.Client) *APIService {
 	return &APIService{
 		DeepSeek: NewDeepSeekService(client, config),
-		Oncall:   NewOncallService(client, config),
+		Oncall:   NewOncallService(client, config, es),
 	}
 }

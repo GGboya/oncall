@@ -19,8 +19,12 @@ func NewCommand(deps *AppDependencies) *cobra.Command {
 		},
 	}
 
+	var q int
+	// 添加 --q 参数
+
 	subCommands := map[string]Command{
-		"day": &DayCommand{},
+		"day":   &DayCommand{},
+		"query": &QueryCommand{},
 	}
 
 	for name, cmdLogic := range subCommands {
@@ -28,10 +32,13 @@ func NewCommand(deps *AppDependencies) *cobra.Command {
 			Use:   name,
 			Short: fmt.Sprintf("Execute %s logic", name),
 			RunE: func(cmd *cobra.Command, args []string) error {
-				return cmdLogic.Execute(deps)
+				return cmdLogic.Execute(deps, q)
 			},
 		}
 		rootCmd.AddCommand(subCmd)
+		if name == "query" {
+			subCmd.Flags().IntVar(&q, "q", 1, "query")
+		}
 	}
 	return rootCmd
 }

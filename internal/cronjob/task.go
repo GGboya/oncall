@@ -29,7 +29,7 @@ func (t *WeeklyTask) Schedule() string {
 }
 
 func (t *WeeklyTask) Execute() error {
-	return ExecuteTask(t.apiService, t.Kind(), t.Name())
+	return ExecuteTask(t.apiService, t.Kind(), t.Name(), 1000)
 }
 
 func (t *WeeklyTask) Kind() string {
@@ -53,7 +53,7 @@ func (t *DailyTask) Schedule() string {
 }
 
 func (t *DailyTask) Execute() error {
-	return ExecuteTask(t.apiService, t.Kind(), t.Name())
+	return ExecuteTask(t.apiService, t.Kind(), t.Name(), 1000)
 }
 
 func (t *DailyTask) Kind() string {

@@ -13,7 +13,6 @@ type DefaultTaskFactory struct{}
 
 func (f *DefaultTaskFactory) CreateTasks(apiService *apiservice.APIService) []cronjob.Task {
 	return []cronjob.Task{
-		cronjob.NewWeeklyTask(apiService),
 		cronjob.NewDailyTask(apiService),
 	}
 }

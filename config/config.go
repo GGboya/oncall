@@ -18,6 +18,13 @@ type Config struct {
 	TopicBaseURL    string
 	TopicListURL    string
 	PageDataBaseURL string
+	Es              *Elasticsearch
+}
+
+type Elasticsearch struct {
+	Address  string
+	Username string
+	Password string
 }
 
 func init() {
@@ -37,9 +44,17 @@ func NewConfig() (*Config, error) {
 	topicBaseURL := os.Getenv("TOPIC_BASE_URL")
 	topicListURL := os.Getenv("TOPIC_LIST_URL")
 	pageDataBaseURL := os.Getenv("PAGE_DATA_BASE_URL")
+	esAddress := os.Getenv("ES_ADDRESS")
+	esUsername := os.Getenv("ES_USERNAME")
+	esPassword := os.Getenv("ES_PASSWORD")
+
 	// 校验关键配置是否缺失
 	if apiKey == "" || accessKey == "" || userName == "" || topicBaseURL == "" || topicListURL == "" || pageDataBaseURL == "" {
 		return nil, errors.New("missing required environment variables (API_KEY, ACCESS_KEY, USER_NAME, TOPIC_BASE_URL, TOPIC_LIST_URL)")
+	}
+
+	if esAddress == "" || esUsername == "" || esPassword == "" {
+		return nil, errors.New("missing required environment variables (ES_ADDRESS, ES_USERNAME, ES_PASSWORD)")
 	}
 
 	return &Config{
@@ -49,5 +64,10 @@ func NewConfig() (*Config, error) {
 		TopicBaseURL:    topicBaseURL,
 		TopicListURL:    topicListURL,
 		PageDataBaseURL: pageDataBaseURL,
+		Es: &Elasticsearch{
+			Address:  esAddress,
+			Username: esUsername,
+			Password: esPassword,
+		},
 	}, nil
 }

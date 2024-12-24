@@ -8,25 +8,28 @@ import (
 	"oncall/model"
 	"strings"
 	"sync"
+
+	"github.com/sirupsen/logrus"
 )
 
 type FetchDataStrategy interface {
 	FetchData(topics []model.Topic, config *config.Config) ([]string, error)
 }
 
-type DayFetchDataStrategy struct {
+type AnalysisFetchDataStrategy struct {
 	client httpclient.HTTPClient
 }
 
-func NewDayFetchDataStrategy(client httpclient.HTTPClient) *DayFetchDataStrategy {
-	return &DayFetchDataStrategy{
+func NewAnalysisFetchDataStrategy(client httpclient.HTTPClient) *AnalysisFetchDataStrategy {
+	return &AnalysisFetchDataStrategy{
 		client: client,
 	}
 }
 
-func (d *DayFetchDataStrategy) FetchData(topics []model.Topic, config *config.Config) ([]string, error) {
+func (d *AnalysisFetchDataStrategy) FetchData(topics []model.Topic, config *config.Config) ([]string, error) {
 	// day 相关逻辑
 	// 每天的数据，还需要额外把每个帖子中的讨论也进行整合，放入到大模型中处理
+	logrus.Info("starting fetch topic details")
 	resp := make([]string, len(topics))
 
 	// 现在拿到所有的 topic 了，根据 day 还是 week，进行不同的大模型处理
@@ -69,20 +72,21 @@ func (d *DayFetchDataStrategy) FetchData(topics []model.Topic, config *config.Co
 		return nil, errMsg
 	}
 
+	logrus.Info("fetch topic details done")
 	return resp, nil
 }
 
-type WeekFetchDataStrategy struct {
+type ClassificationFetchDataStrategy struct {
 	client httpclient.HTTPClient
 }
 
-func NewWeekFetchDataStrategy(client httpclient.HTTPClient) *DayFetchDataStrategy {
-	return &DayFetchDataStrategy{
+func NewWeekFetchDataStrategy(client httpclient.HTTPClient) *ClassificationFetchDataStrategy {
+	return &ClassificationFetchDataStrategy{
 		client: client,
 	}
 }
 
-func (w *WeekFetchDataStrategy) FetchData(topics []model.Topic, config *config.Config) ([]string, error) {
+func (w *ClassificationFetchDataStrategy) FetchData(topics []model.Topic, config *config.Config) ([]string, error) {
 	// week 相关逻辑
 	resp := make([]string, len(topics))
 

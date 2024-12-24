@@ -11,43 +11,51 @@ import (
 	"oncall/config"
 	"oncall/internal/httpclient"
 	"oncall/model"
+
+	"github.com/elastic/go-elasticsearch/v8"
+	"github.com/sirupsen/logrus"
 )
 
 type OncallService struct {
 	client   httpclient.HTTPClient
 	config   *config.Config
 	strategy FetchDataStrategy
+	Es       *elasticsearch.Client
 }
 
-func NewOncallService(client httpclient.HTTPClient, config *config.Config) *OncallService {
+func NewOncallService(client httpclient.HTTPClient, config *config.Config, es *elasticsearch.Client) *OncallService {
 	return &OncallService{
 		client: client,
 		config: config,
+		Es:     es,
 	}
 }
 
 func (s *OncallService) SetFetchDataStrategy(kind string) {
 	switch kind {
-	case "day":
-		s.strategy = &DayFetchDataStrategy{s.client}
-	case "week":
-		s.strategy = &WeekFetchDataStrategy{s.client}
+	case config.Fenxi:
+		s.strategy = &AnalysisFetchDataStrategy{s.client}
+	case config.Fenlei:
+		s.strategy = &ClassificationFetchDataStrategy{s.client}
 	default:
-		s.strategy = &DayFetchDataStrategy{s.client} // 或者设置一个默认策略
+		s.strategy = &AnalysisFetchDataStrategy{s.client} // 或者设置一个默认策略
 	}
 }
 
-func (s *OncallService) FetchAllData(kind string) ([]string, error) {
-	topics, err := s.getTopics(kind)
+func (s *OncallService) FetchAllData(interval string, taskName string, q int) ([]string, error) {
+	logrus.Info("starting get topics title")
+	topics, err := s.getTopics(interval)
+	topics = topics[:min(q, len(topics))]
+	logrus.Info("get topics title success")
 	if err != nil {
 		return nil, err
 	}
-	s.SetFetchDataStrategy(kind)
+	s.SetFetchDataStrategy(taskName)
 	return s.strategy.FetchData(topics, s.config)
 }
 
-func (s *OncallService) getTopics(kind string) ([]model.Topic, error) {
-	timeWindow := map[string]time.Duration{"day": 24 * time.Hour, "week": 7 * 24 * time.Hour}[kind]
+func (s *OncallService) getTopics(interval string) ([]model.Topic, error) {
+	timeWindow := map[string]time.Duration{"day": 24 * time.Hour, "week": 7 * 24 * time.Hour}[interval]
 	now := time.Now()
 	topics := []model.Topic{}
 
