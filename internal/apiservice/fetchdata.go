@@ -40,7 +40,7 @@ func (d *AnalysisFetchDataStrategy) FetchData(topics []model.Topic, config *conf
 		go func(idx int, topic model.Topic) {
 			if err := func() error {
 				defer wg.Done()
-				str := fmt.Sprintf("%s, %s/%d\n", topic.Title, config.TopicListURL, topic.ID)
+				str := fmt.Sprintf("%s,创建时间:%s, %s/%d\n", topic.Title, topic.CreatedAt, config.TopicListURL, topic.ID)
 				url := fmt.Sprintf("%s/%d/", config.TopicBaseURL, topic.ID) + "1.json?track_visit=true&forceLoad=true"
 				respBody, err := doRequest(d.client, "GET", url, nil, config)
 				if err != nil {

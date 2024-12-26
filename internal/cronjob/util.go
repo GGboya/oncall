@@ -79,6 +79,16 @@ func SendToEs(apiService *apiservice.APIService, content string) error {
 			currentQuestion.Description = strings.TrimPrefix(strings.Split(line, "：")[1], " ")
 		} else if strings.Contains(line, "**分析**") {
 			currentQuestion.Analysis = strings.TrimPrefix(strings.Split(line, "：")[1], " ")
+		} else if strings.Contains(line, "创建时间") {
+			tempStr := strings.TrimPrefix(strings.Split(line, "：")[1], " ")
+			createdAt, err := time.Parse("2006-01-02 15:04:05.000 -0700 MST", tempStr)
+			if err != nil {
+				logrus.WithError(err).Errorf("Failed to parse time: %s", tempStr)
+				currentQuestion.Timestamp = time.Now()
+			}
+			if err == nil {
+				currentQuestion.Timestamp = createdAt
+			}
 		}
 
 		// 判断是否到达问题结尾
@@ -104,7 +114,7 @@ func SendToEs(apiService *apiservice.APIService, content string) error {
 
 		// 将文档插入到索引中
 		insertReq := bytes.NewReader(docJSON)
-		insertRes, err := apiService.Oncall.Es.Index("brainpp-oncall-issues", insertReq)
+		insertRes, err := apiService.Oncall.Es.Index("brainpp-oncall-questions", insertReq)
 		if err != nil {
 			return err
 		}
@@ -134,12 +144,13 @@ func WriteToFile(filename, content string) error {
 }
 
 type UserQuestion struct {
-	Name        string `json:"name"`
-	Project     string `json:"project"`
-	QuotaGroup  string `json:"quota_group"`
-	PostLink    string `json:"post_link"`
-	IssueType   string `json:"issue_type"`
-	Cause       string `json:"cause"`
-	Description string `json:"description"`
-	Analysis    string `json:"analysis"`
+	Name        string    `json:"name"`
+	Project     string    `json:"project"`
+	QuotaGroup  string    `json:"quota_group"`
+	PostLink    string    `json:"post_link"`
+	IssueType   string    `json:"issue_type"`
+	Cause       string    `json:"cause"`
+	Description string    `json:"description"`
+	Analysis    string    `json:"analysis"`
+	Timestamp   time.Time `json:"@timestamp"`
 }

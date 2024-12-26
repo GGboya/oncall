@@ -32,7 +32,7 @@ func NewCommand(deps *AppDependencies) *cobra.Command {
 			Use:   name,
 			Short: fmt.Sprintf("Execute %s logic", name),
 			RunE: func(cmd *cobra.Command, args []string) error {
-				return cmdLogic.Execute(deps, q)
+				return cmdLogic.Execute(deps, 10)
 			},
 		}
 		rootCmd.AddCommand(subCmd)
