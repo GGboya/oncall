@@ -46,6 +46,9 @@ func (s *OncallService) FetchAllData(interval string, taskName string, q int) ([
 	logrus.Info("starting get topics title")
 	topics, err := s.getTopics(interval)
 	topics = topics[:min(q, len(topics))]
+	if len(topics) == 0 {
+		return nil, fmt.Errorf("no topics found")
+	}
 	logrus.Info("get topics title success")
 	if err != nil {
 		return nil, err
